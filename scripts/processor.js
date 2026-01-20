@@ -60,22 +60,57 @@ async function convertToDesktopFormat(templatePath) {
             return val;
         }
 
+        let globalIdCounter = -1;
+        let idPrefix = '';
+        let idPadding = 0;
+
         sheet.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return; // Skip source header
 
-            // MAPPING LOGIC (Adjusted to template headers)
-            // Source: [1] ID, [2] Product, [3] Amount, [4] Date
-            const rowData = [];
-            headers.forEach(header => {
-                const h = header.toUpperCase();
-                if (h.includes('ID')) rowData.push(getCellValue(row.getCell(1)));
-                else if (h.includes('NAME') || h.includes('CUSTOMER')) rowData.push(customer.toUpperCase());
-                else if (h.includes('PRODUCT') || h.includes('DESC')) rowData.push(getCellValue(row.getCell(2)));
-                else if (h.includes('PRICE') || h.includes('AMOUNT')) rowData.push(getCellValue(row.getCell(3)));
-                else if (h.includes('DATE')) rowData.push(getCellValue(row.getCell(4)));
-                else rowData.push(''); // Empty for unknown columns
+            // Initialize or update ID counter from the first non-empty ID
+            const rawId = getCellValue(row.getCell(1));
+            if (globalIdCounter === -1 && rawId) {
+                const match = String(rawId).match(/^(.*?)(\d+)$/);
+                if (match) {
+                    idPrefix = match[1];
+                    globalIdCounter = parseInt(match[2], 10);
+                    idPadding = match[2].length;
+                }
+            }
+
+            // Extract core values
+            const productValue = String(getCellValue(row.getCell(2)) || '');
+
+            // Check if we need to split this row (contains /)
+            const itemsToProcess = productValue.includes('/')
+                ? productValue.split('/').map(i => i.trim()).filter(i => i !== '')
+                : [productValue];
+
+            if (itemsToProcess.length > 1) {
+                console.log(`   └─ Splitting row: "${productValue}" -> ${itemsToProcess.length} rows`);
+            }
+
+            itemsToProcess.forEach(item => {
+                const rowData = [];
+
+                // Generate sequential ID
+                let finalId = rawId; // Default fallback
+                if (globalIdCounter !== -1) {
+                    finalId = idPrefix + String(globalIdCounter).padStart(idPadding, '0');
+                    globalIdCounter++;
+                }
+
+                headers.forEach(header => {
+                    const h = header.toUpperCase();
+                    if (h.includes('ID')) rowData.push(finalId);
+                    else if (h.includes('NAME') || h.includes('CUSTOMER')) rowData.push(customer.toUpperCase());
+                    else if (h.includes('PRODUCT') || h.includes('DESC')) rowData.push(item);
+                    else if (h.includes('PRICE') || h.includes('AMOUNT')) rowData.push(getCellValue(row.getCell(3)));
+                    else if (h.includes('DATE')) rowData.push(getCellValue(row.getCell(4)));
+                    else rowData.push(''); // Empty for unknown columns
+                });
+                finalSheet.addRow(rowData);
             });
-            finalSheet.addRow(rowData);
         });
 
         // 3. Save as separate file for this customer

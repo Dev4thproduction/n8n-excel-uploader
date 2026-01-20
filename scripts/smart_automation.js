@@ -5,6 +5,18 @@ const axios = require('axios');
 
 async function logProcessingHistory(customer, downloadedFile, processedFile, recordCount) {
     try {
+        // Check if already logged
+        const historyRes = await axios.get('http://127.0.0.1:3000/api/processing-history');
+        const isDuplicate = historyRes.data.some(h =>
+            h.customer === customer &&
+            h.downloadedFile === downloadedFile
+        );
+
+        if (isDuplicate) {
+            console.log(`○ Skipped logging ${customer}: ${downloadedFile} already in history.`);
+            return;
+        }
+
         await axios.post('http://127.0.0.1:3000/api/processing-history', {
             customer: customer,
             downloadedFile: downloadedFile,

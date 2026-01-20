@@ -41,9 +41,28 @@ async function logToHistory() {
             }
         }
 
+        // 3. Fetch current history to check for duplicates
+        let isDuplicate = false;
+        try {
+            const historyRes = await axios.get('http://127.0.0.1:3000/api/processing-history');
+            const history = historyRes.data;
+            isDuplicate = history.some(h =>
+                h.customer === customer &&
+                h.downloadedFile === originalFile
+            );
+        } catch (e) {
+            console.warn('Could not fetch history for duplicate check, proceeding anyway...');
+        }
+
+        if (isDuplicate) {
+            console.log(`Skipping ${customer}: File ${originalFile} already logged.`);
+            results.push(`○ Skipped ${customer} (Already exists)`);
+            continue;
+        }
+
         console.log(`Logging ${customer}: ${recordCount} records...`);
 
-        // 3. Post to Processing History API
+        // 4. Post to Processing History API
         try {
             await axios.post('http://127.0.0.1:3000/api/processing-history', {
                 customer: customer,

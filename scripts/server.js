@@ -215,6 +215,19 @@ centralApp.get('/api/processing-history', (req, res) => {
 
 // API: Add Processing History Entry
 centralApp.post('/api/processing-history', (req, res) => {
+    const { customer, downloadedFile, processedFile } = req.body;
+
+    // Duplicate Check: Don't add if the same file for the same customer already exists
+    const isDuplicate = processingHistory.some(h =>
+        h.customer === customer &&
+        h.downloadedFile === downloadedFile
+    );
+
+    if (isDuplicate) {
+        console.log(`Skipping duplicate history entry for ${customer}: ${downloadedFile}`);
+        return res.status(200).json({ message: 'Already exists', skipped: true });
+    }
+
     const entry = {
         id: Date.now() + Math.random().toString(36).substr(2, 9),
         timestamp: new Date().toISOString(),
@@ -287,52 +300,78 @@ centralApp.get('/api/preview-original/:customer/:filename', async (req, res) => 
 // API: Magic extraction from unstructured text
 centralApp.post('/api/magic-extract', upload.single('image'), async (req, res) => {
     const { text } = req.body;
-
-    // Heuristic: If there's an image but no text, we'd normally do OCR
-    // For now, we'll assume the 'text' field contains the email/data content
     if (!text) return res.status(400).json({ success: false, error: 'No text provided' });
 
-    console.log('--- AI Extraction Request Received ---');
-    console.log('Raw Text Preview:', text.substring(0, 100) + '...');
+    console.log('--- Magic Extraction Request Received ---');
 
     try {
-        // AI Simulation Logic:
-        // 1. Detect if it's a list (line by line)
-        // 2. Identify common delimiters or keywords
-        const lines = text.split('\n').filter(l => l.trim().length > 3);
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        let columns = [];
+        let dataRows = [];
 
-        // Simple heuristic for columns: [Name, Qty, Price, Total] or [ID, Name, Date]
-        // We'll aim for a standard Product structure if keywords match, otherwise generic
-        let columns = ['Item Name', 'Quantity', 'Unit Price', 'Total'];
-        const dataRows = [];
+        // 1. Detect Header Row
+        // We look for a line that contains multiple known keywords
+        const commonHeaders = ['ID', 'DATE', 'PRODUCT', 'ITEM', 'QTY', 'QUANTITY', 'PRICE', 'AMOUNT', 'TOTAL', 'REGION', 'DESCRIPTION'];
+        let headerIndex = -1;
 
-        lines.forEach(line => {
-            // Try to extract numbers and currency
-            const amountMatches = line.match(/(\$|£|€)?\s?\d+(\.\d+)?/g);
-            const qtyMatch = line.match(/\b\d+\s?(unit|qty|x|pcs)?\b/i);
+        for (let i = 0; i < lines.length; i++) {
+            const words = lines[i].toUpperCase().split(/[\t\s]{2,}/); // Split by tab or 2+ spaces
+            const matches = words.filter(w => commonHeaders.some(h => w.includes(h)));
+            if (matches.length >= 3) {
+                headerIndex = i;
+                columns = words.map(w => w.trim());
+                break;
+            }
+        }
 
-            const row = {
-                'Item Name': line.replace(/(\$|£|€)?\s?\d+(\.\d+)?/g, '').replace(/\b\d+\s?(unit|qty|x|pcs)?\b/i, '').trim(),
-                'Quantity': qtyMatch ? qtyMatch[0] : '1',
-                'Unit Price': amountMatches && amountMatches[0] ? amountMatches[0] : '0',
-                'Total': amountMatches && amountMatches.length > 1 ? amountMatches[amountMatches.length - 1] : (amountMatches && amountMatches[0] ? amountMatches[0] : '0')
-            };
+        // 2. If Header Found, process subsequent lines
+        if (headerIndex !== -1) {
+            for (let i = headerIndex + 1; i < lines.length; i++) {
+                const line = lines[i];
+                // Split by tab or multiple spaces
+                const values = line.split(/[\t]{1,}|[\s]{2,}/);
 
-            if (row['Item Name'].length > 2) dataRows.push(row);
-        });
+                if (values.length >= columns.length - 1 && values.length > 1) {
+                    const row = {};
+                    columns.forEach((col, idx) => {
+                        row[col] = values[idx] || '';
+                    });
+                    dataRows.push(row);
+                } else if (dataRows.length > 0) {
+                    // Stop if we hit a signature or unrelated text after having found records
+                    if (line.includes('Best regards') || line.includes('Sincerely')) break;
+                }
+            }
+        }
 
-        // Special check: if we found no structured data, return generic
+        // 3. Fallback: If no table structure found, use the old heuristic
         if (dataRows.length === 0) {
-            return res.json({
-                success: true,
-                columns: ['Original Text'],
-                data: lines.map(l => ({ 'Original Text': l }))
+            columns = ['Item Name', 'Quantity', 'Unit Price', 'Total'];
+            lines.filter(line => line.length > 10).forEach(line => {
+                const amountMatches = line.match(/(\$|£|€)?\s?\d+(\.\d+)?/g);
+                const qtyMatch = line.match(/\b\d+\s?(unit|qty|x|pcs)?\b/i);
+
+                if (amountMatches || qtyMatch) {
+                    const row = {
+                        'Item Name': line.replace(/(\$|£|€)?\s?\d+(\.\d+)?/g, '').replace(/\b\d+\s?(unit|qty|x|pcs)?\b/i, '').trim(),
+                        'Quantity': qtyMatch ? qtyMatch[0] : '1',
+                        'Unit Price': amountMatches && amountMatches[0] ? amountMatches[0] : '0',
+                        'Total': amountMatches && amountMatches.length > 1 ? amountMatches[amountMatches.length - 1] : (amountMatches && amountMatches[0] ? amountMatches[0] : '0')
+                    };
+                    if (row['Item Name'].length > 2) dataRows.push(row);
+                }
             });
+        }
+
+        // 4. Ultimate Fallback: Just return lines
+        if (dataRows.length === 0) {
+            columns = ['Original Text'];
+            dataRows = lines.map(l => ({ 'Original Text': l }));
         }
 
         res.json({ success: true, columns, data: dataRows });
     } catch (err) {
-        console.error('AI Extraction Error:', err);
+        console.error('Magic Extraction Error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

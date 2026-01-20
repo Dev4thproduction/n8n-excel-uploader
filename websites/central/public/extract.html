@@ -426,8 +426,6 @@
                 if (result.success) {
                     columns = result.columns;
                     dataRows = result.data;
-                    renderColumns();
-                    renderForm();
                     renderTable();
                     status.innerHTML = '<span style="color: var(--success)"><i class="fas fa-check-circle"></i> Extraction Complete!</span>';
                 } else {
