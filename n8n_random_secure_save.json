@@ -1,0 +1,81 @@
+{
+    "name": "Secure Random Download & Save to Disk",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "trigger-id",
+            "name": "When clicking \"Execute Workflow\"",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                220,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "runOnceForAllItems",
+                "jsCode": "const username = 'admin';\nconst password = 'admin';\nconst baseUrl = 'https://the-internet.herokuapp.com/download_secure';\n\ntry {\n  // 1. Get the list of all files\n  const html = await this.helpers.request({\n    method: 'GET',\n    url: baseUrl, \n    auth: { username, password }\n  });\n\n  // Extract filenames from the list\n  const fileMatches = html.matchAll(/href=\"download_secure\\/([^\\\"]+)\"/g);\n  const fileNames = [...fileMatches].map(match => match[1]);\n\n  if (fileNames.length === 0) {\n    throw new Error('No files found on the page.');\n  }\n\n  // 2. Pick one random file\n  const randomIndex = Math.floor(Math.random() * fileNames.length);\n  const fileName = fileNames[randomIndex];\n\n  // 3. Download that specific file\n  const fileBuffer = await this.helpers.request({\n    method: 'GET',\n    url: `${baseUrl}/${fileName}`,\n    encoding: null, // Critical: treat as binary\n    auth: { username, password }\n  });\n\n  // 4. Prepare for n8n binary output\n  const binaryData = await this.helpers.prepareBinaryData(fileBuffer, fileName);\n\n  return [{\n    json: { \n      fileName,\n      status: 'success',\n      message: `Successfully picked and downloaded: ${fileName}`\n    },\n    binary: {\n      data: binaryData\n    }\n  }];\n\n} catch (error) {\n  return [{ json: { status: 'error', message: error.message } }];\n}"
+            },
+            "id": "code-node-id",
+            "name": "Login & Download Random File",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "fileSignal": "={{ $json.fileName }}",
+                "options": {
+                    "appendNewline": false,
+                    "fileName": "={{'C:\\\\Users\\\\4D\\\\Desktop\\\\n8n-auto-excel-uploader\\\\downloads\\\\' + $json.fileName}}"
+                }
+            },
+            "id": "write-to-disk-id",
+            "name": "Write Binary File",
+            "type": "n8n-nodes-base.readWriteFile",
+            "typeVersion": 1,
+            "position": [
+                660,
+                240
+            ]
+        }
+    ],
+    "connections": {
+        "When clicking \"Execute Workflow\"": {
+            "main": [
+                [
+                    {
+                        "node": "Login & Download Random File",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Login & Download Random File": {
+            "main": [
+                [
+                    {
+                        "node": "Write Binary File",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "random-version-id",
+    "id": "random-download-and-save",
+    "meta": {
+        "instanceId": "random-instance-id"
+    },
+    "tags": []
+}

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer 3 - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #7c3aed;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #8b5cf6, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .logout-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            width: 100%;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1000px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--primary);
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 2.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .upload-area i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 1.5rem;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            overflow: hidden;
+        }
+
+        .file-info span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.9rem;
+        }
+
+        .file-info i {
+            color: var(--success);
+            flex-shrink: 0;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .icon-btn {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            cursor: pointer;
+            border: none;
+            font-size: 0.8rem;
+        }
+
+        .icon-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .icon-btn.delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        #loading {
+            display: none;
+            margin-top: 1rem;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        if (localStorage.getItem('auth_c3') !== 'true') window.location.href = 'index.html';
+    </script>
+
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-gem"></i>
+            <span>Customer 3 Portal</span>
+        </div>
+        <a href="#" class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </nav>
+
+    <div class="container">
+        <div class="grid">
+            <!-- Sidebar: Upload & History -->
+            <div class="sidebar">
+                <div class="card">
+                    <h2><i class="fas fa-cloud-upload-alt"></i> Upload Reports</h2>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">You can now upload multiple Excel files at
+                        once.</p>
+                    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                        <i class="fas fa-file-excel"></i>
+                        <p>Click to select files</p>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Supports multiple .xlsx files</span>
+                        <input type="file" id="file-input" accept=".xlsx" multiple onchange="handleUpload(event)">
+                    </div>
+                    <div id="loading"><i class="fas fa-spinner fa-spin"></i> Uploading...</div>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <h2><i class="fas fa-history"></i> Recent Uploads</h2>
+                    <div class="file-list" id="file-list">
+                        <!-- Files will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main: Data Preview -->
+            <div class="preview-section">
+                <div class="card" style="min-height: 100%;">
+                    <h2><i class="fas fa-table"></i> Data Preview</h2>
+                    <p id="preview-msg" style="color: var(--text-muted);">Select a file to see its contents.</p>
+                    <div class="table-container" id="table-container" style="display: none;">
+                        <table id="data-table">
+                            <thead id="table-head"></thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', fetchFiles);
+
+        async function fetchFiles() {
+            const res = await fetch('/api/files');
+            const files = await res.json();
+            const listEl = document.getElementById('file-list');
+            listEl.innerHTML = files.map(f => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <i class="fas fa-file-excel"></i>
+                        <span title="${f}">${f}</span>
+                    </div>
+                    <div class="file-actions">
+                        <button class="icon-btn" onclick="previewFile('${f}')" title="Preview"><i class="fas fa-eye"></i></button>
+                        <a href="/api/download/${f}" class="icon-btn" title="Download"><i class="fas fa-download"></i></a>
+                        <button class="icon-btn delete" onclick="deleteFile('${f}')" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            `).join('') || '<p style="color: var(--text-muted); text-align: center;">No files uploaded yet.</p>';
+        }
+
+        async function handleUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) {
+                    fetchFiles();
+                } else {
+                    alert('Upload failed');
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                event.target.value = '';
+            }
+        }
+
+        async function deleteFile(filename) {
+            if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+
+            try {
+                const res = await fetch(`/api/files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+                if (res.ok) {
+                    fetchFiles();
+                    // Clear preview if deleted file was being previewed
+                    const previewMsg = document.getElementById('preview-msg');
+                    if (previewMsg.textContent.includes(filename)) {
+                        document.getElementById('table-container').style.display = 'none';
+                        previewMsg.style.display = 'block';
+                        previewMsg.textContent = 'Select a file to see its contents.';
+                    }
+                } else {
+                    alert('Delete failed');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function previewFile(filename) {
+            document.getElementById('table-container').style.display = 'none';
+            document.getElementById('preview-msg').style.display = 'block';
+            document.getElementById('preview-msg').textContent = `Loading preview for ${filename}...`;
+
+            const res = await fetch(`/api/preview/${encodeURIComponent(filename)}`);
+            if (!res.ok) return alert('Failed to read file');
+
+            const { headers, data } = await res.json();
+
+            const headEl = document.getElementById('table-head');
+            const bodyEl = document.getElementById('table-body');
+
+            headEl.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+            bodyEl.innerHTML = data.map(row => `
+                <tr>${headers.map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>
+            `).join('');
+
+            document.getElementById('table-container').style.display = 'block';
+            document.getElementById('preview-msg').style.display = 'none';
+        }
+
+        function logout() {
+            localStorage.removeItem('auth_c3');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+
+</html>

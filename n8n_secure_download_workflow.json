@@ -1,0 +1,157 @@
+{
+    "name": "The Internet - Secure Download & List",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "e2f18398-e567-4286-9dc7-674ca60d603a",
+            "name": "When clicking \"Execute Workflow\"",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                220,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://the-internet.herokuapp.com/download_secure",
+                "authentication": "basicAuth",
+                "options": {}
+            },
+            "id": "3b29c063-8f0a-4710-8664-90928e46939b",
+            "name": "Get File List",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                440,
+                240
+            ],
+            "credentials": {
+                "httpBasicAuth": {
+                    "id": "secure_download_creds",
+                    "name": "The Internet Admin"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "extractionValues": {
+                    "values": [
+                        {
+                            "key": "fileName",
+                            "cssSelector": "a",
+                            "returnValue": "text"
+                        },
+                        {
+                            "key": "fileUrl",
+                            "cssSelector": "a",
+                            "returnValue": "attribute",
+                            "attribute": "href"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "eb364841-3b4e-4f0f-838d-176378e937d5",
+            "name": "Extract Links",
+            "type": "n8n-nodes-base.html",
+            "typeVersion": 1,
+            "position": [
+                660,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "fieldToSplitOut": "fileName",
+                "options": {}
+            },
+            "id": "dc9c824c-1d00-47e4-b74c-6878e34882df",
+            "name": "Split Files",
+            "type": "n8n-nodes-base.itemLists",
+            "typeVersion": 3,
+            "position": [
+                880,
+                240
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ 'https://the-internet.herokuapp.com/download_secure/' + $json.fileName }}",
+                "authentication": "basicAuth",
+                "responseFormat": "file",
+                "options": {}
+            },
+            "id": "5a7e6b7d-c7a4-4f9e-bc8e-289528d82f7c",
+            "name": "Download File",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1100,
+                240
+            ],
+            "credentials": {
+                "httpBasicAuth": {
+                    "id": "secure_download_creds",
+                    "name": "The Internet Admin"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "When clicking \"Execute Workflow\"": {
+            "main": [
+                [
+                    {
+                        "node": "Get File List",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get File List": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Links",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Links": {
+            "main": [
+                [
+                    {
+                        "node": "Split Files",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split Files": {
+            "main": [
+                [
+                    {
+                        "node": "Download File",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "b1c2d3e4-f5g6-h7i8-j9k0-l1m2n3o4p5q6",
+    "id": "secure-download-workflow-v2",
+    "meta": {
+        "instanceId": "random-id"
+    },
+    "tags": []
+}

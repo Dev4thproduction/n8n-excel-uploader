@@ -1,0 +1,19 @@
+{
+  "name": "n8n-auto-excel-uploader",
+  "version": "1.0.0",
+  "description": "Automated Excel file uploader with n8n integration",
+  "main": "scripts/server.js",
+  "scripts": {
+    "start": "node scripts/server.js",
+    "automation": "node scripts/smart_automation.js",
+    "clear-tracker": "echo {} > processed_files_tracker.json && echo Tracker cleared!",
+    "reset-all": "echo {} > processed_files_tracker.json && node scripts/smart_automation.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "puppeteer": "^23.11.1"
+  }
+}

@@ -1,0 +1,41 @@
+[
+    {
+        "id": "customer1",
+        "customerId": "customer1",
+        "type": "excel",
+        "loginUrl": "http://127.0.0.1:3001/index.html",
+        "username": "user1",
+        "password": "pass1",
+        "usernameSelector": "#username",
+        "passwordSelector": "#password",
+        "loginButtonSelector": "button",
+        "actionUrl": "http://127.0.0.1:3001/dashboard.html",
+        "downloadButtonSelector": ".file-item:first-child a[title='Download']"
+    },
+    {
+        "id": "customer2",
+        "customerId": "customer2",
+        "type": "excel",
+        "loginUrl": "http://127.0.0.1:3002/index.html",
+        "username": "user2",
+        "password": "pass2",
+        "usernameSelector": "#username",
+        "passwordSelector": "#password",
+        "loginButtonSelector": "button",
+        "actionUrl": "http://127.0.0.1:3002/dashboard.html",
+        "downloadButtonSelector": ".file-item:first-child a[title='Download']"
+    },
+    {
+        "id": "customer3",
+        "customerId": "customer3",
+        "type": "excel",
+        "loginUrl": "http://127.0.0.1:3003/index.html",
+        "username": "user3",
+        "password": "pass3",
+        "usernameSelector": "#username",
+        "passwordSelector": "#password",
+        "loginButtonSelector": "button",
+        "actionUrl": "http://127.0.0.1:3003/dashboard.html",
+        "downloadButtonSelector": ".file-item:first-child a[title='Download']"
+    }
+]

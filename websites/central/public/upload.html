@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Dashboard - Upload</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 1.5rem 2rem;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 600;
+            font-size: 1.2rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: color 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: white;
+        }
+
+        main {
+            max-width: 600px;
+            margin: 4rem auto;
+            padding: 2rem;
+        }
+
+        .upload-container {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        .field {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        select,
+        input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            color: white;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        #status {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="logo">CENTRAL DASHBOARD</div>
+        <div class="nav-links">
+            <a href="/processing-history">Processing History</a>
+            <a href="/upload" class="active">Upload</a>
+            <a href="/extract-excel">Extract Excel</a>
+            <a href="/login" onclick="localStorage.removeItem('central_auth')">Logout</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- NEW: Automation Workflow Section -->
+        <div class="upload-container" style="margin-bottom: 2rem; border-color: var(--primary);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: var(--primary);">Automation Agent</h2>
+                <span
+                    style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 1rem; font-weight: 600;">n8n
+                    Ready</span>
+            </div>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Trigger the full automation workflow: Download files from all customers, process them using the master
+                template, and log the results in the Processing History.
+            </p>
+            <button id="run-auto-btn" onclick="runFullAutomation()"
+                style="background: linear-gradient(to right, #6366f1, #8b5cf6);">
+                🚀 Run Full Workflow
+            </button>
+            <div id="auto-status"
+                style="margin-top: 1.5rem; display: none; font-family: 'Courier New', Courier, monospace; font-size: 0.8rem; background: #0f172a; padding: 1rem; border-radius: 0.75rem; border: 1px solid #334155; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        if (localStorage.getItem('central_auth') !== 'true') window.location.href = '/login';
+
+        async function runFullAutomation() {
+            const btn = document.getElementById('run-auto-btn');
+            const status = document.getElementById('auto-status');
+
+            btn.disabled = true;
+            btn.innerText = '⚙️ Executing Workflow...';
+            status.style.display = 'block';
+            status.innerText = 'Starting sequence...\n- Downloading latest files\n- Standardizing headers\n- Pushing to database';
+            status.style.color = '#94a3b8';
+
+            try {
+                const response = await fetch(`/api/run-automation`, { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    status.innerText = '✅ SUCCESS: Automation Complete\n\n' + result.details;
+                    status.style.color = '#4ade80';
+                } else {
+                    status.innerText = '❌ ERROR: Automation Failed\n\n' + result.details || result.error;
+                    status.style.color = '#f87171';
+                }
+            } catch (err) {
+                status.innerText = '❌ Critical Error: ' + err.message;
+                status.style.color = '#f87171';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '🚀 Run Full Workflow';
+            }
+        }
+
+        async function handleUpload() {
+            const customer = document.getElementById('customer-dropdown').value;
+            const fileInput = document.getElementById('file-upload-input');
+            const status = document.getElementById('status');
+            const btn = document.getElementById('submit-upload-btn');
+
+            if (!customer || !fileInput.files[0]) {
+                alert('Please select both a customer and a file.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Uploading...';
+
+            const formData = new FormData();
+            formData.append('customer', customer);
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    status.innerText = "Success! Data processed for " + customer.toUpperCase();
+                    status.className = "success";
+                    status.style.display = "block";
+                    fileInput.value = "";
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (err) {
+                alert('Error uploading file');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Upload to Database';
+            }
+        }
+    </script>
+</body>
+
+</html>
